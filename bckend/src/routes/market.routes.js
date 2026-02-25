@@ -9,6 +9,6 @@ const router = express.Router();
 
 router.get("/us-macro", getUSMacroData);
 router.get("/stock/:symbol", getStockQuote);
-router.gert("/sec/:cik", getSECFilings); 
+router.get("/sec/:cik", getSECFilings); 
 
 export default router; 

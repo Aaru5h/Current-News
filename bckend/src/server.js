@@ -15,5 +15,5 @@ app.use("/api/market.routes.js", marketRoutes);
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log('Sever running on port ${PORT}');
+  console.log(`Sever running on port ${PORT}`);
 }); 

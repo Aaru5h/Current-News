@@ -7,16 +7,16 @@ import {
 export const getUSMacroData = async (req, res) => {
   try{
     const data = await fetchUSMacroData();
-    res.jsom(data);
+    await res.json(data);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    await res.status(500).json({ error: error.message });
   }
 };
 
 export const getStockQuote = async (req, res) => {
   try{
-    cost { symbol } -req.paramas;
-    const data = await fetStockQuote(symbol);
+    const { symbol } = req.params;
+    const data = await fetchStockQuote(symbol);
     res.json(data);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -25,7 +25,7 @@ export const getStockQuote = async (req, res) => {
 
 export const getSECFilings = async (req, res) =>{
   try{
-    const { cik } = req.paramas;
+    const { cik } = req.params;
     const data = await fetchSECData(cik);
     res.json(data);
   } catch (error) {
