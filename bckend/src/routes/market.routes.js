@@ -1,14 +1,11 @@
-import express from "express"; 
-import {
-  getUSMacroData,
-  getStockQuote,
-  getSECFilings
-} from "../controllers/market.controller.js";
-
+const express = require('express');
 const router = express.Router();
+const marketController = require('../controllers/market.controller');
 
-router.get("/us-macro", getUSMacroData);
-router.get("/stock/:symbol", getStockQuote);
-router.get("/sec/:cik", getSECFilings); 
+// GET /api/market/macro
+router.get('/macro', marketController.getUSMacro);
 
-export default router; 
+// GET /api/market/company/0000320193 (Apple CIK)
+router.get('/company/:cik', marketController.getCompanyData);
+
+module.exports = router;
