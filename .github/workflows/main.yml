@@ -13,7 +13,5 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install Dependencies
-        run: |
-          npm install express axios dotenv cors
-          echo "Packages installed successfully!"
+      - name: Run App
+        run: node index.js
