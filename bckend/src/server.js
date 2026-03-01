@@ -8,7 +8,12 @@ import newsRoutes from "./routes/news.routes.js";
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: [
+    "http://localhost:3000",
+    "https://current-news-omega.vercel.app"
+  ],
+}));
 app.use(express.json()); 
 
 app.use("/api/markets", marketRoutes); 
