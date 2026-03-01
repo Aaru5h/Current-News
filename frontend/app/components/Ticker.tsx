@@ -8,9 +8,10 @@ export default function Ticker() {
         const fetchQuotes = async () => {
             const symbols = ["AAPL", "TSLA", "NVDA", "MSFT", "GOOGL", "AMZN"];
             try {
+                const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
                 const results = await Promise.all(
                     symbols.map(async (sym) => {
-                        const res = await fetch(`http://localhost:5001/api/markets/stock/${sym}`);
+                        const res = await fetch(`${API_URL}/api/markets/stock/${sym}`);
                         if (!res.ok) return null;
                         const data = await res.json();
                         return {

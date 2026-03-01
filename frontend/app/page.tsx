@@ -11,7 +11,8 @@ export default function Home() {
   useEffect(() => {
     const fetchNews = async () => {
       try {
-        const response = await fetch("http://localhost:5001/api/news");
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+        const response = await fetch(`${API_URL}/api/news`);
         if (!response.ok) throw new Error("Failed to fetch news");
         const data = await response.json();
         setNewsItems(data);
