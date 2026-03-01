@@ -76,6 +76,9 @@ export default function Home() {
                   category={news.category}
                   title={news.title}
                   summary={news.summary}
+                  url={news.url}
+                  image={news.image}
+                  source={news.source}
                   delay={news.delay}
                 />
               ))
