@@ -1,34 +1,31 @@
-import {
-  fetchUSMacroData,
-  fetchStockQuote,
-  fetchSECData
-} from "../services/market.services.js";
+const marketService = require('../services/market.service');
 
-export const getUSMacroData = async (req, res) => {
+const getUSMacro = async (req, res) => {
   try {
-    const data = await fetchUSMacroData();
-    res.json(data);
+    // Example: UNRATE is the FRED code for Unemployment Rate
+    const data = await marketService.getFredData('UNRATE');
+    res.status(200).json({
+      success: true,
+      source: 'FRED',
+      indicator: 'Unemployment Rate',
+      data
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
-export const getStockQuote = async (req, res) => {
-  try {
-    const { symbol } = req.params;
-    const data = await fetchStockQuote(symbol);
-    res.json(data);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-export const getSECFilings = async (req, res) => {
+const getCompanyData = async (req, res) => {
   try {
     const { cik } = req.params;
-    const data = await fetchSECData(cik);
-    res.json(data);
+    const data = await marketService.getSecFilings(cik);
+    res.status(200).json({ success: true, source: 'SEC', data });
   } catch (error) {
-    res.status(500).json({ error: error.message }); 
+    res.status(500).json({ success: false, message: error.message });
   }
+};
+
+module.exports = {
+  getUSMacro,
+  getCompanyData
 };
