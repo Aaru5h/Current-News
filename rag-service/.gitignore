@@ -1,3 +1,15 @@
 .env
-venv
-chroma_db
+venv/
+.venv/
+chroma_db/
+
+# Python specific
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Setup / Environment
+.pytest_cache/
+.coverage
+htmlcov/

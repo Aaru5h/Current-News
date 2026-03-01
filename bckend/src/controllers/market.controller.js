@@ -5,16 +5,16 @@ import {
 } from "../services/market.services.js";
 
 export const getUSMacroData = async (req, res) => {
-  try{
+  try {
     const data = await fetchUSMacroData();
-    await res.json(data);
+    res.json(data);
   } catch (error) {
-    await res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error.message });
   }
 };
 
 export const getStockQuote = async (req, res) => {
-  try{
+  try {
     const { symbol } = req.params;
     const data = await fetchStockQuote(symbol);
     res.json(data);
@@ -23,8 +23,8 @@ export const getStockQuote = async (req, res) => {
   }
 };
 
-export const getSECFilings = async (req, res) =>{
-  try{
+export const getSECFilings = async (req, res) => {
+  try {
     const { cik } = req.params;
     const data = await fetchSECData(cik);
     res.json(data);

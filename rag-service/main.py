@@ -6,10 +6,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="News Summarizer RAG API")
 
-# Setup CORS to allow the frontend to access this API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Update this to specific origins in production
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

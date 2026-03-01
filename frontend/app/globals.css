@@ -1,26 +1,194 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --bg-main: #0B0E14;
+  --bg-surface: #151A22;
+  --bg-surface-hover: #1E2532;
+  --text-main: #FFFFFF;
+  --text-muted: #A0AAB2;
+  --accent-green: #00E676;
+  --accent-blue: #2979FF;
+  --border-color: rgba(255, 255, 255, 0.08);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  font-family: var(--font-geist-sans), sans-serif;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* Premium Utilities */
+.glass-panel {
+  background: rgba(21, 26, 34, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+
+.gradient-text-blue {
+  background: linear-gradient(90deg, #2979FF, #00E676);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gradient-text-green {
+  background: linear-gradient(90deg, #00E676, #AEEAEB);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Ticker Animation */
+@keyframes ticker {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.ticker-container {
+  overflow: hidden;
+  white-space: nowrap;
+  display: flex;
+  background-color: #000000;
+  border-bottom: 1px solid var(--border-color);
+  padding: 8px 0;
+}
+
+.ticker-content {
+  display: inline-flex;
+  animation: ticker 30s linear infinite;
+}
+
+.ticker-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 24px;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.ticker-price {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.ticker-positive {
+  color: var(--accent-green);
+}
+
+.ticker-negative {
+  color: #FF1744;
+}
+
+/* News Card */
+.news-card {
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.news-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(41, 121, 255, 0.15);
+  border-color: rgba(41, 121, 255, 0.3);
+}
+
+.news-card-image {
+  width: 100%;
+  height: 200px;
+  background: linear-gradient(135deg, #1A2235, #0B0E14);
+  position: relative;
+  overflow: hidden;
+}
+
+.news-card-image::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.8) 100%);
+}
+
+.news-card-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.news-category {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent-blue);
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.news-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-bottom: 12px;
+  color: var(--text-main);
+}
+
+.news-summary {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin-bottom: 24px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.news-link {
+  margin-top: auto;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--accent-green);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: gap 0.2s ease;
+}
+
+.news-link:hover {
+  gap: 12px;
+}
+
+/* Animations */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

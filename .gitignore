@@ -1,0 +1,9 @@
+# Global ignores
+.DS_Store
+.idea/
+.vscode/
+*.log
+
+# Environment variables
+.env
+.env.local

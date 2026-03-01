@@ -1,19 +1,21 @@
 import express from "express";
 import cors from "cors";
-import dontenv from "dontenv";
-import marketRoutes from ",/routes/market.routes.js";
+import dotenv from "dotenv";
+import marketRoutes from "./routes/market.routes.js";
+import newsRoutes from "./routes/news.routes.js";
 
-dontenv.config(); 
+dotenv.config(); 
 
 const app = express();
 
 app.use(cors());
 app.use(express.json()); 
 
-app.use("/api/market.routes.js", marketRoutes); 
+app.use("/api/markets", marketRoutes); 
+app.use("/api/news", newsRoutes); 
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 app.listen(PORT, () => {
-  console.log(`Sever running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 }); 

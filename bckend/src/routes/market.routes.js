@@ -3,7 +3,7 @@ import {
   getUSMacroData,
   getStockQuote,
   getSECFilings
-} from "../controllers/market.controllers.js";
+} from "../controllers/market.controller.js";
 
 const router = express.Router();
 
