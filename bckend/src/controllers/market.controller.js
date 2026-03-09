@@ -1,9 +1,8 @@
-const marketService = require('../services/market.service');
+import { getFredData, getSecFilings } from '../services/market.services.js';
 
-const getUSMacro = async (req, res) => {
+export const getUSMacro = async (req, res) => {
   try {
-    // Example: UNRATE is the FRED code for Unemployment Rate
-    const data = await marketService.getFredData('UNRATE');
+    const data = await getFredData('UNRATE');
     res.status(200).json({
       success: true,
       source: 'FRED',
@@ -15,17 +14,12 @@ const getUSMacro = async (req, res) => {
   }
 };
 
-const getCompanyData = async (req, res) => {
+export const getCompanyData = async (req, res) => {
   try {
     const { cik } = req.params;
-    const data = await marketService.getSecFilings(cik);
+    const data = await getSecFilings(cik);
     res.status(200).json({ success: true, source: 'SEC', data });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
-};
-
-module.exports = {
-  getUSMacro,
-  getCompanyData
 };

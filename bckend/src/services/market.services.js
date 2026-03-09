@@ -1,9 +1,9 @@
-const axios = require('axios');
+import axios from 'axios';
 
 // SEC requires a specific User-Agent header (Company Name/Contact Email)
 const SEC_HEADERS = { 'User-Agent': process.env.SEC_USER_AGENT };
 
-const getFredData = async (seriesId) => {
+export const getFredData = async (seriesId) => {
   const url = `https://api.stlouisfed.org/fred/series/observations`;
   const response = await axios.get(url, {
     params: {
@@ -17,14 +17,8 @@ const getFredData = async (seriesId) => {
   return response.data.observations;
 };
 
-const getSecFilings = async (cik) => {
-  // Example for SEC company facts
+export const getSecFilings = async (cik) => {
   const url = `https://data.sec.gov/api/xbrl/companyfacts/CIK${cik.padStart(10, '0')}.json`;
   const response = await axios.get(url, { headers: SEC_HEADERS });
   return response.data;
-};
-
-module.exports = {
-  getFredData,
-  getSecFilings
 };

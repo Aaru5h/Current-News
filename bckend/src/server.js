@@ -1,7 +1,8 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const marketRoutes = require('./routes/market.routes');
+import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+import marketRoutes from './routes/market.routes.js';
+import newsRoutes from './routes/news.routes.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -12,6 +13,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/market', marketRoutes);
+app.use('/api/news', newsRoutes);
 
 // Health Check
 app.get('/', (req, res) => {

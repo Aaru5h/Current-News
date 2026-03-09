@@ -1,11 +1,12 @@
-const express = require('express');
+import express from 'express';
+import { getUSMacro, getCompanyData } from '../controllers/market.controller.js';
+
 const router = express.Router();
-const marketController = require('../controllers/market.controller');
 
 // GET /api/market/macro
-router.get('/macro', marketController.getUSMacro);
+router.get('/macro', getUSMacro);
 
 // GET /api/market/company/0000320193 (Apple CIK)
-router.get('/company/:cik', marketController.getCompanyData);
+router.get('/company/:cik', getCompanyData);
 
-module.exports = router;
+export default router;

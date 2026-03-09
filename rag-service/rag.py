@@ -84,3 +84,45 @@ Summary:"""
     
     result = rag_chain.invoke(query)
     return result
+
+
+def summarize_articles(articles: list[dict]) -> dict:
+    """
+    Generate concise AI summaries for a batch of news articles.
+    
+    Args:
+        articles: List of dicts with 'url', 'title', 'description' keys.
+    
+    Returns:
+        Dict mapping url -> AI-generated summary string.
+    """
+    if not articles:
+        return {}
+
+    llm = ChatGroq(model_name="llama-3.3-70b-versatile", temperature=0.3)
+    
+    template = """You are a professional financial news analyst. Summarize the following news article in 2-3 concise sentences.
+Focus on the key financial impact, market implications, and relevant data points.
+Be factual and professional. Do not add opinions.
+
+Title: {title}
+Description: {description}
+
+Summary:"""
+    prompt = PromptTemplate.from_template(template)
+    chain = prompt | llm | StrOutputParser()
+    
+    summaries = {}
+    for article in articles:
+        url = article.get("url", "")
+        title = article.get("title", "Untitled")
+        description = article.get("description", "No description available.")
+        
+        try:
+            summary = chain.invoke({"title": title, "description": description})
+            summaries[url] = summary.strip()
+        except Exception as e:
+            print(f"Error summarizing article '{title}': {e}")
+            summaries[url] = description  # Fallback to original description
+    
+    return summaries
