@@ -15,7 +15,7 @@ export default function Home() {
         const response = await fetch(`${API_URL}/api/news`);
         if (!response.ok) throw new Error("Failed to fetch news");
         const data = await response.json();
-        setNewsItems(data);
+        setNewsItems(data.articles || []);
       } catch (err) {
         console.error("Error fetching news:", err);
       } finally {
