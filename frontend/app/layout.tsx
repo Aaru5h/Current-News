@@ -1,20 +1,18 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
+import Sidebar from "./components/Sidebar";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Future Vision",
-  description: "State of the art fintech and trading news aggregator.",
+  title: "StockPulse AI — Financial Intelligence Platform",
+  description:
+    "AI-powered financial intelligence platform with real-time market analysis, news sentiment, portfolio tracking, and automated trading agents.",
 };
 
 export default function RootLayout({
@@ -24,8 +22,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        {children}
+      <body className={inter.variable}>
+        <div className="app-layout">
+          <Sidebar />
+          <main className="main-content">{children}</main>
+        </div>
       </body>
     </html>
   );
