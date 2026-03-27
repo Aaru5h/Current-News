@@ -1,7 +1,8 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import { use } from "react";
 import Link from "next/link";
+import AnalysisReport from "../../components/AnalysisReport";
 import {
   ArrowLeft,
   Activity,
@@ -103,6 +104,31 @@ const AGENT_DATA: Record<string, {
 export default function AgentDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const agent = AGENT_DATA[id] || AGENT_DATA["alpha-hunter"];
+
+  const [symbol, setSymbol] = useState("AAPL");
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<any>(null);
+
+  const handleRunAnalysis = async () => {
+    if (!symbol) return;
+    setIsAnalyzing(true);
+    setAnalysisResult(null);
+    try {
+      const res = await fetch("http://localhost:8000/api/trading/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ symbol, mode: "SAFE" }) 
+      });
+      if (!res.ok) throw new Error("Analysis failed");
+      const data = await res.json();
+      setAnalysisResult(data.report);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to run analysis. Ensure RAG service is running on port 8000.");
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   return (
     <div>
@@ -253,10 +279,45 @@ export default function AgentDetailPage({ params }: { params: Promise<{ id: stri
             <div className="section-header">
               <h2 className="section-title">Quick Actions</h2>
             </div>
+            
+            {/* Run Analysis Trigger Integration */}
+            <div style={{ padding: "12px", background: "rgba(0,0,0,0.2)", borderRadius: "8px", marginBottom: "12px" }}>
+              <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "8px", fontWeight: 500 }}>
+                Test Sandbox (Live RAG Service)
+              </div>
+              <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
+                <input 
+                  type="text" 
+                  value={symbol}
+                  onChange={(e) => setSymbol(e.target.value.toUpperCase())}
+                  placeholder="Ticker (e.g. AAPL)"
+                  style={{ 
+                    background: "rgba(255,255,255,0.05)", 
+                    border: "1px solid rgba(255,255,255,0.1)", 
+                    borderRadius: "6px", 
+                    padding: "8px 12px", 
+                    color: "white", 
+                    width: "100%",
+                    outline: "none"
+                  }} 
+                />
+                <button 
+                  className="btn btn-primary" 
+                  onClick={handleRunAnalysis} 
+                  disabled={isAnalyzing}
+                  style={{ whiteSpace: "nowrap" }}
+                >
+                  {isAnalyzing ? "..." : <><Zap size={14} /> Analyze</>}
+                </button>
+              </div>
+              {isAnalyzing && (
+                <div style={{ fontSize: "0.8rem", color: "var(--accent-cyan)", animation: "pulse 1.5s infinite" }}>
+                  Initializing Agent 1 engine...
+                </div>
+              )}
+            </div>
+
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              <button className="btn btn-ghost" style={{ width: "100%", justifyContent: "flex-start" }}>
-                <Zap size={14} /> Force Execute Now
-              </button>
               <button className="btn btn-ghost" style={{ width: "100%", justifyContent: "flex-start" }}>
                 <ShieldAlert size={14} /> Reset Risk Parameters
               </button>
@@ -267,6 +328,14 @@ export default function AgentDetailPage({ params }: { params: Promise<{ id: stri
           </div>
         </div>
       </div>
+      
+      {/* Dynamic AI Report Output */}
+      {analysisResult && (
+        <AnalysisReport 
+          report={analysisResult} 
+          onClose={() => setAnalysisResult(null)} 
+        />
+      )}
     </div>
   );
 }
