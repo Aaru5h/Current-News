@@ -1,4 +1,6 @@
-const express = require('express');
+import express from 'express';
+import { getUSMacro, getCompanyData } from '../controllers/market.controller.js';
+
 const router = express.Router();
 const marketController = require('../controllers/market.controller');
 const { validateSymbol, validateUserId, validatePortfolioHolding } = require('../middleware/validation');
