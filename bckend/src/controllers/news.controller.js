@@ -1,68 +1,102 @@
-import axios from "axios";
-
-const GNEWS_BASE = "https://gnews.io/api/v4";
+const newsService = require('../services/news.service');
 
 /**
- * Fetch news articles from GNews API by search query or topic.
+ * Get paginated news articles with optional filters.
+ * @route GET /api/news
  */
-const fetchGNews = async (query, category = null, max = 4) => {
+const getNews = async (req, res, next) => {
   try {
-    const params = {
-      apikey: process.env.GNEWS_API_KEY,
-      lang: "en",
-      max,
-    };
-
-    let url;
-    if (query) {
-      url = `${GNEWS_BASE}/search`;
-      params.q = query;
-    } else {
-      url = `${GNEWS_BASE}/top-headlines`;
-      if (category) params.topic = category;
-    }
-
-    const response = await axios.get(url, { params });
-    return response.data.articles || [];
-  } catch (err) {
-    console.error("GNews fetch error:", err.message);
-    return [];
+    const { page = 1, limit = 10, category, sentiment } = req.query;
+    const result = await newsService.getNews({ page, limit, category, sentiment });
+    res.status(200).json({
+      success: true,
+      data: result.articles,
+      message: 'News articles retrieved successfully',
+      pagination: result.pagination,
+    });
+  } catch (error) {
+    next(error);
   }
 };
 
-export const getLatestNews = async (req, res) => {
+/**
+ * Get a specific news article by its MongoDB _id.
+ * @route GET /api/news/:id
+ */
+const getNewsById = async (req, res, next) => {
   try {
-    if (!process.env.GNEWS_API_KEY) {
-      return res.status(500).json({ error: "GNEWS_API_KEY is not configured." });
+    const article = await newsService.getNewsById(req.params.id);
+    if (!article) {
+      return res.status(404).json({
+        success: false,
+        error: 'Article not found',
+      });
     }
-
-    // Fetch crypto and markets news in parallel
-    const [cryptoArticles, marketArticles] = await Promise.all([
-      fetchGNews("crypto OR bitcoin OR blockchain OR ethereum", null, 3),
-      fetchGNews("stock market OR finance OR trading", null, 3),
-    ]);
-
-    // Map to a clean response format with categories
-    const mapArticles = (articles, category) =>
-      articles.map((article, i) => ({
-        category,
-        title: article.title,
-        summary: article.description || "No summary available.",
-        url: article.url,
-        image: article.image,
-        source: article.source?.name || "Unknown",
-        publishedAt: article.publishedAt,
-        delay: i * 0.1,
-      }));
-
-    const results = [
-      ...mapArticles(cryptoArticles, "Crypto"),
-      ...mapArticles(marketArticles, "Markets"),
-    ];
-
-    res.json(results);
+    res.status(200).json({
+      success: true,
+      data: article,
+      message: 'Article retrieved successfully',
+    });
   } catch (error) {
-    console.error("News aggregation error:", error.message);
-    res.status(500).json({ error: "Failed to aggregate news." });
+    next(error);
   }
+};
+
+/**
+ * Get news articles filtered by stock symbol.
+ * @route GET /api/news/symbol/:symbol
+ */
+const getNewsBySymbol = async (req, res, next) => {
+  try {
+    const articles = await newsService.getNewsBySymbol(req.params.symbol);
+    res.status(200).json({
+      success: true,
+      data: articles,
+      message: `News for symbol ${req.params.symbol} retrieved successfully`,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get the latest 10 news articles.
+ * @route GET /api/news/latest
+ */
+const getLatestNews = async (req, res, next) => {
+  try {
+    const articles = await newsService.getLatestNews(10);
+    res.status(200).json({
+      success: true,
+      data: articles,
+      message: 'Latest news retrieved successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Trigger news fetch from GNews API and save to database.
+ * @route POST /api/news/fetch
+ */
+const fetchNews = async (req, res, next) => {
+  try {
+    const result = await newsService.fetchAndSaveNews();
+    res.status(200).json({
+      success: true,
+      data: result,
+      message: 'News fetched and saved successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = {
+  getNews,
+  getNewsById,
+  getNewsBySymbol,
+  getLatestNews,
+  fetchNews,
 };
