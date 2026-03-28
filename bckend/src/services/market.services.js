@@ -82,31 +82,87 @@ const getHistoricalData = async (symbol, startDate, endDate) => {
 };
 
 /**
- * Refresh market data by fetching from the RAG service and updating the database.
- * Calls the RAG service's summarize endpoint for market data context,
- * then upserts into the MarketData collection.
+ * Refresh market data by fetching from RAG service GET /fetch/market-data.
+ * Upserts each item into the MarketData collection and pushes a snapshot
+ * to the historicalData array for tracking.
  *
- * @returns {Promise<Object>} Refresh result with counts
+ * @returns {Promise<Object>} Refresh result with updated count and symbols
  */
 const refreshMarketData = async () => {
-  try {
-    // Call RAG service to get latest market context
-    const response = await axios.post(`${RAG_SERVICE_URL}/api/summarize`, {
-      query: 'Provide current market data and price information for major stocks and crypto assets.',
-    });
+  // Call the correct RAG endpoint
+  const response = await axios.get(`${RAG_SERVICE_URL}/fetch/market-data`);
 
-    const summary = response.data.summary || '';
+  // Validate response — expect an array of market objects
+  const items = response.data.data || response.data.items || response.data;
+
+  if (!Array.isArray(items) || items.length === 0) {
+    return { updated: 0, symbols: [], message: 'No market data returned from RAG service' };
+  }
+
+  const now = new Date();
+  const updatedSymbols = [];
+
+  // Build bulk upsert operations
+  const bulkOps = items.map((item) => {
+    const symbol = (item.symbol || item.ticker || '').toUpperCase();
+    if (!symbol) return null;
+
+    updatedSymbols.push(symbol);
+
+    const price = typeof item.price === 'number' ? item.price : null;
+    const volume = typeof item.volume === 'number' ? item.volume : null;
+    const change = typeof item.change === 'number' ? item.change : null;
+    const changePercent = typeof item.changePercent === 'number' ? item.changePercent : null;
+    const marketCap = typeof item.marketCap === 'number' ? item.marketCap : null;
+
+    // Build the historical snapshot to push
+    const historyEntry = {
+      date: now,
+      open: item.open || null,
+      high: item.high || null,
+      low: item.low || null,
+      close: price,
+      volume,
+    };
 
     return {
-      refreshed: true,
-      source: 'rag-service',
-      summary,
-      timestamp: new Date(),
+      updateOne: {
+        filter: { symbol },
+        update: {
+          $set: {
+            symbol,
+            price,
+            volume,
+            change,
+            changePercent,
+            marketCap,
+            lastUpdated: now,
+          },
+          $push: {
+            historicalData: {
+              $each: [historyEntry],
+              $slice: -365, // Keep last 365 entries max
+            },
+          },
+        },
+        upsert: true,
+      },
     };
-  } catch (error) {
-    console.error('Market data refresh failed:', error.message);
-    throw error;
+  }).filter(Boolean);
+
+  if (bulkOps.length === 0) {
+    return { updated: 0, symbols: [], message: 'No valid market data items to process' };
   }
+
+  const result = await MarketData.bulkWrite(bulkOps, { ordered: false });
+
+  return {
+    updated: (result.modifiedCount || 0) + (result.upsertedCount || 0),
+    inserted: result.upsertedCount || 0,
+    modified: result.modifiedCount || 0,
+    symbols: updatedSymbols,
+    timestamp: now,
+  };
 };
 
 module.exports = {

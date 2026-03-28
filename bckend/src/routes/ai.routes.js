@@ -1,6 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const aiController = require('../controllers/ai.controller');
+const { authenticate } = require('../middleware/auth');
+
+// All AI routes require authentication
+router.use(authenticate);
 
 // POST /api/ai/analyze — Analyze market data via RAG service
 router.post('/analyze', aiController.analyzeMarket);

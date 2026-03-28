@@ -8,16 +8,35 @@ const analyzeMarket = async (req, res, next) => {
   try {
     const { token, price, volume, indicators, confidence } = req.body;
 
-    if (!token) {
+    // Strict input validation
+    if (!token || typeof token !== 'string' || token.trim().length === 0) {
       return res.status(400).json({
         success: false,
         error: 'Validation Error',
-        details: 'token is required',
+        details: 'token is required and must be a non-empty string',
+      });
+    }
+
+    const errors = [];
+    if (price !== undefined && (typeof price !== 'number' || isNaN(price))) {
+      errors.push('price must be a valid number');
+    }
+    if (volume !== undefined && (typeof volume !== 'number' || isNaN(volume))) {
+      errors.push('volume must be a valid number');
+    }
+    if (confidence !== undefined && (typeof confidence !== 'number' || confidence < 0 || confidence > 1)) {
+      errors.push('confidence must be a number between 0 and 1');
+    }
+    if (errors.length > 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation Error',
+        details: errors.join('; '),
       });
     }
 
     const result = await aiService.analyzeMarket({
-      token,
+      token: token.trim().toUpperCase(),
       price,
       volume,
       indicators,

@@ -3,6 +3,7 @@ const MarketData = require('../models/MarketData');
 
 /**
  * Get a user's complete portfolio with current prices populated.
+ * Uses a single batched DB query for all symbols instead of N+1 queries.
  *
  * @param {string} userId - MongoDB ObjectId of the user
  * @returns {Promise<Object>} Portfolio object with holdings and total value
@@ -18,29 +19,51 @@ const getPortfolio = async (userId) => {
 
   const holdings = user.portfolio?.holdings || [];
 
-  // Enrich holdings with latest prices from MarketData
-  const enrichedHoldings = await Promise.all(
-    holdings.map(async (holding) => {
-      const marketData = await MarketData.findOne({ symbol: holding.symbol })
-        .sort({ lastUpdated: -1 })
-        .lean();
+  if (holdings.length === 0) {
+    return {
+      userId,
+      holdings: [],
+      totalValue: 0,
+      lastCalculated: new Date(),
+    };
+  }
 
-      const currentPrice = marketData?.price || holding.currentPrice || 0;
-      const totalValue = currentPrice * (holding.quantity || 0);
-      const costBasis = (holding.averagePrice || 0) * (holding.quantity || 0);
-      const profitLoss = totalValue - costBasis;
-      const profitLossPercent = costBasis > 0 ? ((profitLoss / costBasis) * 100) : 0;
+  // OPTIMIZED: Single batch query instead of N separate queries
+  const symbols = [...new Set(holdings.map((h) => h.symbol).filter(Boolean))];
 
-      return {
-        ...holding,
-        currentPrice,
-        totalValue,
-        costBasis,
-        profitLoss,
-        profitLossPercent: Math.round(profitLossPercent * 100) / 100,
-      };
-    })
-  );
+  const marketDataDocs = await MarketData.find({
+    symbol: { $in: symbols },
+  })
+    .sort({ lastUpdated: -1 })
+    .lean();
+
+  // Build a symbol → latest price lookup map
+  const priceMap = {};
+  for (const doc of marketDataDocs) {
+    // Only keep the first (most recent) entry per symbol
+    if (!priceMap[doc.symbol]) {
+      priceMap[doc.symbol] = doc.price || 0;
+    }
+  }
+
+  // Enrich holdings using the price map (zero DB calls here)
+  const enrichedHoldings = holdings.map((holding) => {
+    const currentPrice = priceMap[holding.symbol] || holding.currentPrice || 0;
+    const quantity = holding.quantity || 0;
+    const totalValue = currentPrice * quantity;
+    const costBasis = (holding.averagePrice || 0) * quantity;
+    const profitLoss = totalValue - costBasis;
+    const profitLossPercent = costBasis > 0 ? ((profitLoss / costBasis) * 100) : 0;
+
+    return {
+      ...holding,
+      currentPrice,
+      totalValue: Math.round(totalValue * 100) / 100,
+      costBasis: Math.round(costBasis * 100) / 100,
+      profitLoss: Math.round(profitLoss * 100) / 100,
+      profitLossPercent: Math.round(profitLossPercent * 100) / 100,
+    };
+  });
 
   const totalValue = enrichedHoldings.reduce((sum, h) => sum + h.totalValue, 0);
 

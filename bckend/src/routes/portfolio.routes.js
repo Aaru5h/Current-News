@@ -1,7 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const portfolioController = require('../controllers/portfolio.controller');
+const { authenticate, extractUserId } = require('../middleware/auth');
 const { validateUserId, validateSymbol, validatePortfolioHolding } = require('../middleware/validation');
+
+// All portfolio routes require authentication
+router.use(authenticate);
 
 // GET /api/portfolio/:userId — Full portfolio with current prices
 router.get('/:userId', validateUserId, portfolioController.getPortfolio);
