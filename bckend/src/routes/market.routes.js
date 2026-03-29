@@ -1,5 +1,4 @@
-import express from 'express';
-import { getUSMacro, getCompanyData } from '../controllers/market.controller.js';
+const express = require('express');
 
 const router = express.Router();
 const marketController = require('../controllers/market.controller');
