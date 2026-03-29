@@ -16,6 +16,9 @@ const KNOWN_SYMBOLS = new Set([
   'COIN', 'SNAP', 'PLTR', 'RIVN', 'LCID', 'GME', 'AMC', 'SPY', 'QQQ',
 ]);
 
+/**
+ * Extract stock/crypto symbols from text.
+ */
 const extractSymbols = (text) => {
   if (!text || typeof text !== 'string') return [];
 
@@ -45,6 +48,9 @@ const extractSymbols = (text) => {
   return [...found];
 };
 
+/**
+ * Normalize an article to a common schema.
+ */
 const normalize = ({ title, description, url, image, source, publishedAt, category }) => ({
   title: title || "Untitled",
   description: description || "",
@@ -55,6 +61,26 @@ const normalize = ({ title, description, url, image, source, publishedAt, catego
   category: category || "General",
 });
 
+/**
+ * Deduplicate articles by title.
+ */
+const deduplicateByTitle = (articles) => {
+  const seen = new Set();
+  return articles.filter((article) => {
+    const key = article.title.toLowerCase().trim().slice(0, 60);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
+// ─────────────────────────────────────────────
+// API Fetchers
+// ─────────────────────────────────────────────
+
+/**
+ * Fetch from GNews API.
+ */
 const fetchGNews = async (query, category = null, max = 4) => {
   try {
     const params = {
@@ -80,6 +106,9 @@ const fetchGNews = async (query, category = null, max = 4) => {
   }
 };
 
+/**
+ * Fetch from TheNewsAPI.
+ */
 const fetchFromTheNewsAPI = async (search = "finance OR economy OR markets", limit = 5) => {
   try {
     const token = process.env.THENEWSAPI_KEY;
@@ -115,6 +144,9 @@ const fetchFromTheNewsAPI = async (search = "finance OR economy OR markets", lim
   }
 };
 
+/**
+ * Fetch from StockData.org.
+ */
 const fetchFromStockData = async (limit = 5) => {
   try {
     const token = process.env.STOCKDATA_API_KEY;
@@ -148,6 +180,9 @@ const fetchFromStockData = async (limit = 5) => {
   }
 };
 
+/**
+ * Fetch from CryptoPanic.
+ */
 const fetchFromCryptoPanic = async (limit = 5) => {
   try {
     const token = process.env.CRYPTOPANIC_API_KEY;
@@ -182,16 +217,9 @@ const fetchFromCryptoPanic = async (limit = 5) => {
   }
 };
 
-const deduplicateByTitle = (articles) => {
-  const seen = new Set();
-  return articles.filter((article) => {
-    const key = article.title.toLowerCase().trim().slice(0, 60);
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-};
-
+/**
+ * Fetch and merge financial news from all API sources.
+ */
 const fetchAllNews = async () => {
   try {
     const [theNewsArticles, stockDataArticles, cryptoArticles] = await Promise.all([
@@ -208,6 +236,13 @@ const fetchAllNews = async () => {
   }
 };
 
+// ─────────────────────────────────────────────
+// Database operations
+// ─────────────────────────────────────────────
+
+/**
+ * Fetch news from GNews API and save/upsert to MongoDB.
+ */
 const fetchAndSaveNews = async () => {
   try {
     const [cryptoArticles, marketArticles] = await Promise.all([
@@ -263,6 +298,9 @@ const fetchAndSaveNews = async () => {
   }
 };
 
+/**
+ * Get paginated news articles with optional filters.
+ */
 const getNews = async ({ page = 1, limit = 10, category, sentiment }) => {
   try {
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
@@ -297,6 +335,9 @@ const getNews = async ({ page = 1, limit = 10, category, sentiment }) => {
   }
 };
 
+/**
+ * Get a single news article by its MongoDB _id.
+ */
 const getNewsById = async (id) => {
   try {
     return await NewsArticle.findById(id).lean();
@@ -306,6 +347,9 @@ const getNewsById = async (id) => {
   }
 };
 
+/**
+ * Get news articles related to a specific stock symbol.
+ */
 const getNewsBySymbol = async (symbol) => {
   try {
     return await NewsArticle.find({
@@ -320,6 +364,9 @@ const getNewsBySymbol = async (symbol) => {
   }
 };
 
+/**
+ * Get the latest N news articles.
+ */
 const getLatestNews = async (limit = 10) => {
   try {
     return await NewsArticle.find()
@@ -344,4 +391,5 @@ module.exports = {
   getNewsById,
   getNewsBySymbol,
   getLatestNews,
+  deduplicateByTitle,
 };

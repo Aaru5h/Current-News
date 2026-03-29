@@ -25,39 +25,38 @@ const analyzeMarket = async (data) => {
   }
 
   // Call the correct RAG endpoint with structured payload
-  const response = await axios.post(`${RAG_SERVICE_URL}/analyze/market`, {
-    token: token.toUpperCase(),
-    price: typeof price === 'number' ? price : null,
-    volume: typeof volume === 'number' ? volume : null,
-    indicators: indicators || {},
+  const response = await axios.post(`${RAG_SERVICE_URL}/api/trading/analyze`, {
+    symbol: token.toUpperCase(),
+    // We don't need to pass price/volume/indicators as the new agent handles fetching these if needed
   });
 
   // Validate response structure
   if (!response.data || typeof response.data !== 'object') {
-    const err = new Error('Invalid response from RAG service /analyze/market');
+    const err = new Error('Invalid response from RAG service /api/trading/analyze');
     err.statusCode = 502;
     throw err;
   }
 
   const result = response.data;
 
-  // Parse recommendation (from response or fallback to HOLD)
+  // The new AI Agent response might have recommendation in the analysis text or a dedicated field
   let recommendation = 'HOLD';
+  const reportText = (result.analysis || result.summary || '').toUpperCase();
+  
   if (result.recommendation) {
     const rec = result.recommendation.toUpperCase();
     if (['BUY', 'SELL', 'HOLD'].includes(rec)) {
       recommendation = rec;
     }
-  } else if (result.explanation || result.summary) {
-    const text = (result.explanation || result.summary || '').toUpperCase();
-    if (text.includes('BUY') && !text.includes('SELL')) recommendation = 'BUY';
-    else if (text.includes('SELL') && !text.includes('BUY')) recommendation = 'SELL';
+  } else if (reportText) {
+    if (reportText.includes('BUY') && !reportText.includes('SELL')) recommendation = 'BUY';
+    else if (reportText.includes('SELL') && !reportText.includes('BUY')) recommendation = 'SELL';
   }
 
   // Save analysis result to database
   const aiData = new AIData({
     token: token.toUpperCase(),
-    price: typeof price === 'number' ? price : result.price || null,
+    price: typeof price === 'number' ? price : result.current_price || null,
     volume: typeof volume === 'number' ? volume : result.volume || null,
     confidence: result.confidence || data.confidence || 0.5,
     indicators: result.indicators || indicators || {},
