@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Bot,
@@ -8,64 +8,33 @@ import {
   Target,
   ShieldCheck,
   Plus,
-  ArrowUpRight,
-  AlertTriangle,
-  FileText,
   Lightbulb,
+  Loader2,
 } from "lucide-react";
 
-const AGENTS = [
-  {
-    id: "sentiment-sentinel",
-    name: "Sentiment Sentinel",
-    status: "Running",
-    statusColor: "var(--accent-green)",
-    desc: "Monitors global news cycles and social media mentions for trend shifts in tech sectors.",
-    lastActivity: "Recent Activity",
-    icon: "🛡️",
-  },
-  {
-    id: "alpha-hunter",
-    name: "Alpha Hunter",
-    status: "Running",
-    statusColor: "var(--accent-green)",
-    desc: "Scans 500+ tickers for technical breakout patterns and high-probability momentum entries.",
-    lastActivity: "Recent Activity",
-    icon: "🎯",
-  },
-  {
-    id: "risk-warden",
-    name: "Risk Warden",
-    status: "Paused",
-    statusColor: "var(--accent-amber)",
-    desc: "Automatically adjusts stop-losses and position sizing based on real-time volatility index (VIX).",
-    lastActivity: "Last Activity",
-    icon: "🔒",
-  },
-];
-
-const FEED = [
-  {
-    title: "Alpha Hunter: Buy Executed",
-    detail: "100 shares $AMD @ $164.20",
-    time: "2 mins ago",
-    type: "buy" as const,
-  },
-  {
-    title: "Sentinel: Sentiment Alert",
-    detail: 'Massive spike in "AI Chip" mentions',
-    time: "15 mins ago",
-    type: "alert" as const,
-  },
-  {
-    title: "Report Bot: Data Synced",
-    detail: "Weekly portfolio CSV generated",
-    time: "1 hour ago",
-    type: "info" as const,
-  },
-];
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export default function AgentsPage() {
+  const [signals, setSignals] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSignals = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/ai/signals`);
+        if (res.ok) {
+          const data = await res.json();
+          setSignals(data.data || []);
+        }
+      } catch (err) {
+        console.error("Error fetching AI signals:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSignals();
+  }, []);
+
   return (
     <div>
       <div className="page-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -78,19 +47,19 @@ export default function AgentsPage() {
         </button>
       </div>
 
-      {/* Stats */}
+      {/* Stats — from API signals */}
       <div className="stats-row" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
         <div className="stat-card">
-          <div className="stat-label">Tasks Completed</div>
-          <div className="stat-value blue">1,284</div>
+          <div className="stat-label">AI Signals</div>
+          <div className="stat-value blue">{signals.length}</div>
         </div>
         <div className="stat-card">
-          <div className="stat-label">Hours Saved</div>
-          <div className="stat-value green">42.5h</div>
+          <div className="stat-label">Status</div>
+          <div className="stat-value green">{loading ? "Loading..." : "Ready"}</div>
         </div>
         <div className="stat-card">
-          <div className="stat-label">Avg. Accuracy</div>
-          <div className="stat-value purple">99.2%</div>
+          <div className="stat-label">Uptime</div>
+          <div className="stat-value purple">—</div>
         </div>
       </div>
 
@@ -98,40 +67,13 @@ export default function AgentsPage() {
       <div className="section-header">
         <h2 className="section-title">
           <Bot size={18} className="section-title-icon" />
-          Active Agents
+          AI Agents
         </h2>
       </div>
 
       {/* Agent Cards Grid */}
       <div className="grid-3" style={{ marginBottom: "24px" }}>
-        {AGENTS.map((agent) => (
-          <Link key={agent.id} href={`/agents/${agent.id}`} style={{ textDecoration: "none" }}>
-            <div className="agent-card" style={{ height: "100%" }}>
-              <div className="agent-card-header">
-                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                  <span style={{ fontSize: "1.3rem" }}>{agent.icon}</span>
-                  <div className="agent-card-title">{agent.name}</div>
-                </div>
-                <span
-                  className="section-badge"
-                  style={{
-                    background: `${agent.statusColor}15`,
-                    color: agent.statusColor,
-                    border: `1px solid ${agent.statusColor}30`,
-                  }}
-                >
-                  {agent.status}
-                </span>
-              </div>
-              <div className="agent-card-desc">{agent.desc}</div>
-              <div className="agent-card-footer">
-                <Clock size={12} /> {agent.lastActivity}
-              </div>
-            </div>
-          </Link>
-        ))}
-
-        {/* Create Card */}
+        {/* Create Card (always shown) */}
         <div className="agent-create-card">
           <Plus size={28} style={{ color: "var(--text-dim)", marginBottom: "12px" }} />
           <div style={{ fontSize: "0.9rem", fontWeight: 600, color: "var(--text-main)", marginBottom: "6px" }}>
@@ -143,38 +85,61 @@ export default function AgentsPage() {
         </div>
       </div>
 
-      {/* Bottom Section: Execution Feed + Tip */}
+      {/* Bottom Section: Signals Feed + Tip */}
       <div className="grid-2">
-        {/* Execution Feed */}
+        {/* Execution Feed from AI Signals */}
         <div className="card">
           <div className="section-header">
             <h2 className="section-title">
               <Zap size={18} style={{ color: "var(--accent-amber)" }} />
-              Live Execution Feed
+              AI Signal Feed
             </h2>
-            <span className="section-badge badge-green">● Live</span>
+            <span className="section-badge badge-blue">{signals.length} signals</span>
           </div>
-          <div>
-            {FEED.map((item, i) => (
-              <div key={i} className="execution-feed-item">
-                <div className={`execution-dot ${item.type}`} />
-                <div>
-                  <div className="execution-feed-title">{item.title}</div>
-                  <div className="execution-feed-detail">{item.detail}</div>
-                  <div className="execution-feed-time">{item.time}</div>
+          {loading ? (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "180px", gap: "10px" }}>
+              <Loader2 size={18} className="spin" style={{ color: "var(--accent-blue)" }} />
+              <span style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>Loading signals...</span>
+            </div>
+          ) : signals.length > 0 ? (
+            <div>
+              {signals.slice(0, 5).map((signal, i) => (
+                <div key={i} className="execution-feed-item">
+                  <div className={`execution-dot ${signal.recommendation === "BUY" ? "buy" : signal.recommendation === "SELL" ? "sell" : "info"}`} />
+                  <div>
+                    <div className="execution-feed-title">
+                      {signal.token} — {signal.recommendation}
+                    </div>
+                    <div className="execution-feed-detail">
+                      Confidence: {(signal.confidence * 100).toFixed(1)}%
+                    </div>
+                    <div className="execution-feed-time">
+                      {signal.createdAt ? new Date(signal.createdAt).toLocaleString() : ""}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "180px", gap: "12px" }}>
+              <Zap size={28} style={{ color: "var(--text-dim)" }} />
+              <span style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>
+                No AI signals yet
+              </span>
+              <span style={{ fontSize: "0.72rem", color: "var(--text-dim)" }}>
+                Analyze markets via POST /api/ai/analyze
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Optimization Tip */}
         <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
           <div className="tip-box">
             <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px", fontWeight: 700, color: "var(--accent-cyan)", fontSize: "0.85rem" }}>
-              <Lightbulb size={16} /> Optimization Tip
+              <Lightbulb size={16} /> Getting Started
             </div>
-            Deploy &apos;Correlation Scout&apos; to automatically find hedging opportunities when volatility rises above 20%.
+            Use POST /api/ai/analyze with a token symbol to generate your first AI trading signal. The RAG service will process market data and news sentiment to produce actionable insights.
           </div>
 
           {/* Agent Performance Overview */}
@@ -185,25 +150,11 @@ export default function AgentsPage() {
                 Agent Performance
               </h2>
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-              {AGENTS.map((agent) => (
-                <div key={agent.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <span style={{ fontSize: "0.9rem" }}>{agent.icon}</span>
-                    <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-main)" }}>{agent.name}</span>
-                  </div>
-                  <div style={{ width: "100px", height: "4px", borderRadius: "2px", background: "rgba(255,255,255,0.06)" }}>
-                    <div
-                      style={{
-                        height: "4px",
-                        borderRadius: "2px",
-                        background: agent.statusColor,
-                        width: agent.status === "Running" ? "85%" : "45%",
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "120px", gap: "12px" }}>
+              <Target size={28} style={{ color: "var(--text-dim)" }} />
+              <span style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>
+                Performance data available after agents run
+              </span>
             </div>
           </div>
         </div>

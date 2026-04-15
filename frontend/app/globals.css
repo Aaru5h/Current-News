@@ -681,6 +681,17 @@ body {
 .execution-dot.buy { background: var(--accent-green); box-shadow: 0 0 8px rgba(16, 185, 129, 0.5); }
 .execution-dot.alert { background: var(--accent-amber); box-shadow: 0 0 8px rgba(245, 158, 11, 0.5); }
 .execution-dot.info { background: var(--accent-blue); box-shadow: 0 0 8px rgba(59, 130, 246, 0.5); }
+.execution-dot.sell { background: var(--accent-red); box-shadow: 0 0 8px rgba(239, 68, 68, 0.5); }
+
+/* ============ SPINNER ============ */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
 
 .execution-feed-title {
   font-size: 0.82rem;

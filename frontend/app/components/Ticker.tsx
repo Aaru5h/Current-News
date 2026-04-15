@@ -1,16 +1,51 @@
 "use client";
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export default function Ticker() {
-    const tickerItems = [
-        { symbol: "BTC", price: "$63,245", change: "+2.4%", isPositive: true },
-        { symbol: "ETH", price: "$3,240", change: "-1.2%", isPositive: false },
-        { symbol: "NASDAQ", price: "20,292", change: "+0.8%", isPositive: true },
-        { symbol: "S&P500", price: "5,431", change: "+0.5%", isPositive: true },
-        { symbol: "GOLD", price: "$2,350", change: "-0.2%", isPositive: false },
-    ];
+    const [tickerItems, setTickerItems] = useState<any[]>([]);
 
-    // Duplicate logic for smooth scrolling
+    useEffect(() => {
+        const fetchTicker = async () => {
+            try {
+                // Try to fetch some known symbols from the market data API
+                const symbols = ['BTC', 'ETH', 'AAPL', 'MSFT', 'NVDA'];
+                const results: any[] = [];
+
+                for (const symbol of symbols) {
+                    try {
+                        const res = await fetch(`${API_URL}/api/market/data/${symbol}`);
+                        if (res.ok) {
+                            const data = await res.json();
+                            if (data.data) {
+                                results.push({
+                                    symbol: data.data.symbol,
+                                    price: data.data.price ? `$${data.data.price.toLocaleString()}` : "—",
+                                    change: data.data.changePercent ? `${data.data.changePercent > 0 ? '+' : ''}${data.data.changePercent.toFixed(1)}%` : "—",
+                                    isPositive: (data.data.changePercent || 0) >= 0,
+                                });
+                            }
+                        }
+                    } catch {
+                        // Skip individual failures
+                    }
+                }
+
+                setTickerItems(results);
+            } catch (err) {
+                console.error("Error fetching ticker data:", err);
+            }
+        };
+
+        fetchTicker();
+    }, []);
+
+    if (tickerItems.length === 0) {
+        return null; // Don't render ticker if no data
+    }
+
+    // Duplicate for smooth scrolling animation
     const displayItems = [...tickerItems, ...tickerItems, ...tickerItems, ...tickerItems];
 
     return (

@@ -10,55 +10,26 @@ import {
   Globe,
   ShoppingCart,
   BarChart3,
+  Loader2,
 } from "lucide-react";
 
-const FEED_ITEMS = [
-  {
-    title: "OPEC+ Considers Further Output Cuts Amid Geopolitical Uncertainty",
-    tag: "Energy",
-    time: "12 mins ago",
-    color: "var(--accent-amber)",
-  },
-  {
-    title: "Semiconductor Lead Times Surge as Port Congestion Worsens in East Asia",
-    tag: "Supply Chain",
-    time: "34 mins ago",
-    color: "var(--accent-red)",
-  },
-  {
-    title: "Federal Reserve Hints at 'Higher for Longer' Strategy to Combat Core Inflation",
-    tag: "Policy",
-    time: "1 hour ago",
-    color: "var(--accent-purple)",
-  },
-  {
-    title: "Consumer Spending Trends Shift as Fuel Prices Hit 6-Month Highs",
-    tag: "Economy",
-    time: "2 hours ago",
-    color: "var(--accent-blue)",
-  },
-];
-
-const IMPACTED_ASSETS = [
-  { ticker: "TSM", risk: "Supply Chain Risk: High", color: "var(--accent-red)" },
-  { ticker: "AAPL", risk: "Consumer Pricing: Mod", color: "var(--accent-amber)" },
-  { ticker: "XOM", risk: "Energy Tailwind: High", color: "var(--accent-green)" },
-];
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export default function NewsPage() {
   const [newsItems, setNewsItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchNews = async () => {
       try {
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
         const response = await fetch(`${API_URL}/api/news`);
         if (!response.ok) throw new Error("Failed to fetch news");
         const data = await response.json();
-        setNewsItems(data.articles || []);
-      } catch (err) {
+        setNewsItems(data.data || data.articles || []);
+      } catch (err: any) {
         console.error("Error fetching news:", err);
+        setError(err.message);
       } finally {
         setLoading(false);
       }
@@ -69,47 +40,39 @@ export default function NewsPage() {
   return (
     <div>
       <div className="page-header">
-        <h1 className="page-title">News & Sentiment</h1>
+        <h1 className="page-title">News &amp; Sentiment</h1>
         <p className="page-subtitle">AI-powered market intelligence and news analysis</p>
       </div>
 
       <div className="grid-main-side">
         {/* Main Feed */}
         <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-          {/* Real-time Feed */}
+          {/* Live News Feed */}
           <div className="card">
             <div className="section-header">
               <h2 className="section-title">
                 <Newspaper size={18} className="section-title-icon" />
-                Real-time Feed
+                News Feed
               </h2>
-              <span className="section-badge badge-green">● Live</span>
+              <span className="section-badge badge-blue">
+                {newsItems.length} articles
+              </span>
             </div>
-            <div>
-              {FEED_ITEMS.map((item, i) => (
-                <div key={i} className="feed-item">
-                  <div className="feed-item-tag" style={{ color: item.color }}>{item.tag}</div>
-                  <div className="feed-item-title">{item.title}</div>
-                  <div className="feed-item-meta">
-                    <span>{item.time}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
 
-          {/* Live API News */}
-          {newsItems.length > 0 && (
-            <div className="card">
-              <div className="section-header">
-                <h2 className="section-title">
-                  <Globe size={18} className="section-title-icon" />
-                  Latest from Sources
-                </h2>
-                <span className="section-badge badge-blue">{newsItems.length} articles</span>
+            {loading ? (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "250px", gap: "10px" }}>
+                <Loader2 size={18} className="spin" style={{ color: "var(--accent-blue)" }} />
+                <span style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>Loading intelligence feed...</span>
               </div>
+            ) : error ? (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "250px", gap: "12px" }}>
+                <AlertTriangle size={32} style={{ color: "var(--accent-amber)" }} />
+                <span style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>Could not load news feed</span>
+                <span style={{ fontSize: "0.78rem", color: "var(--text-dim)" }}>{error}</span>
+              </div>
+            ) : newsItems.length > 0 ? (
               <div>
-                {newsItems.slice(0, 8).map((article, i) => (
+                {newsItems.map((article, i) => (
                   <a
                     key={i}
                     href={article.url}
@@ -123,24 +86,36 @@ export default function NewsPage() {
                     </div>
                     <div className="feed-item-title">{article.title}</div>
                     <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", lineHeight: 1.6, marginTop: "6px" }}>
-                      {article.summary?.substring(0, 150)}...
+                      {(article.summary || article.description || article.content || "").substring(0, 200)}...
                     </div>
-                    <div className="feed-item-meta" style={{ marginTop: "8px" }}>
+                    <div className="feed-item-meta" style={{ marginTop: "8px", display: "flex", gap: "12px" }}>
                       <span>{article.source}</span>
+                      {article.publishedAt && (
+                        <span style={{ color: "var(--text-dim)" }}>
+                          {new Date(article.publishedAt).toLocaleDateString()}
+                        </span>
+                      )}
+                      {article.symbols && article.symbols.length > 0 && (
+                        <span style={{ color: "var(--accent-purple)" }}>
+                          {article.symbols.join(", ")}
+                        </span>
+                      )}
                     </div>
                   </a>
                 ))}
               </div>
-            </div>
-          )}
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "250px", gap: "12px" }}>
+                <Newspaper size={32} style={{ color: "var(--text-dim)" }} />
+                <span style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>No news articles available</span>
+                <span style={{ fontSize: "0.78rem", color: "var(--text-dim)" }}>
+                  Trigger a fetch via POST /api/news/fetch to populate the feed
+                </span>
+              </div>
+            )}
+          </div>
 
-          {loading && (
-            <div className="card" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "200px" }}>
-              <span style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>Loading intelligence feed...</span>
-            </div>
-          )}
-
-          {/* Causal Intelligence Chain */}
+          {/* Causal Intelligence Chain — structural UI, not synthetic data */}
           <div className="card">
             <div className="section-header">
               <h2 className="section-title">
@@ -149,15 +124,15 @@ export default function NewsPage() {
               </h2>
             </div>
             <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", marginBottom: "20px" }}>
-              Tracing the impact of &apos;Geopolitical Tensions&apos; across market nodes
+              Impact tracing is activated when AI sentiment analysis detects trigger events
             </p>
             <div className="causal-chain">
               <div className="causal-node">
                 <div className="causal-node-dot trigger">
                   <AlertTriangle size={18} />
                 </div>
-                <div className="causal-node-label">Geopolitical Event</div>
-                <div className="causal-node-sublabel">Trigger</div>
+                <div className="causal-node-label">Trigger Event</div>
+                <div className="causal-node-sublabel">Detected via AI</div>
               </div>
               <div className="causal-arrow" />
               <div className="causal-node">
@@ -185,29 +160,11 @@ export default function NewsPage() {
               </div>
             </div>
           </div>
-
-          {/* Impacted Assets */}
-          <div className="card">
-            <div className="section-header">
-              <h2 className="section-title">
-                <Link2 size={18} className="section-title-icon" />
-                Highly Impacted Assets
-              </h2>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              {IMPACTED_ASSETS.map((asset) => (
-                <div key={asset.ticker} className="impacted-asset">
-                  <div className="impacted-asset-ticker">{asset.ticker}</div>
-                  <div className="impacted-asset-risk" style={{ color: asset.color }}>{asset.risk}</div>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
 
         {/* Right Sidebar */}
         <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-          {/* AI Market Mood */}
+          {/* AI Market Mood — needs backend sentiment data */}
           <div className="card">
             <div className="section-header">
               <h2 className="section-title">
@@ -215,23 +172,14 @@ export default function NewsPage() {
                 AI Market Mood
               </h2>
             </div>
-            <div className="mood-gauge">
-              <div className="mood-gauge-ring" style={{ background: "conic-gradient(var(--accent-amber) 0% 62%, rgba(255,255,255,0.06) 62% 100%)" }}>
-                <div style={{ width: "60px", height: "60px", borderRadius: "50%", background: "var(--bg-surface)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span className="mood-gauge-value">62</span>
-                </div>
-              </div>
-              <div>
-                <div className="mood-gauge-label">Cautiously Bullish</div>
-                <div className="mood-gauge-desc">
-                  Mixed signals from macro data but strong institutional support in tech sector.
-                </div>
-              </div>
-            </div>
-            <div style={{ display: "flex", gap: "8px", marginTop: "12px" }}>
-              <span className="section-badge badge-green">Tech: Bullish</span>
-              <span className="section-badge badge-amber">Energy: Neutral</span>
-              <span className="section-badge badge-red">Bonds: Bearish</span>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "120px", gap: "12px" }}>
+              <Brain size={28} style={{ color: "var(--text-dim)" }} />
+              <span style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>
+                Sentiment analysis pending
+              </span>
+              <span style={{ fontSize: "0.72rem", color: "var(--text-dim)" }}>
+                Requires POST /api/ai/news-sentiment
+              </span>
             </div>
           </div>
 
@@ -241,13 +189,12 @@ export default function NewsPage() {
               <Sparkles size={14} /> AI Summary
             </div>
             <p className="ai-summary-text">
-              Based on current geopolitical shifts, StockPulse AI predicts a volatility spike
-              in the tech sector within 48 hours. Long-term positions in energy remain favored
-              as supply constraints solidify.
+              AI summaries will be generated when news articles are analyzed through the sentiment pipeline.
+              Use the RAG service at <strong>/api/summarize</strong> to generate insights.
             </p>
           </div>
 
-          {/* Trending Topics */}
+          {/* Trending Topics — needs backend data */}
           <div className="card">
             <div className="section-header">
               <h2 className="section-title">
@@ -255,21 +202,11 @@ export default function NewsPage() {
                 Trending
               </h2>
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-              {[
-                { topic: "AI Chip Demand", mentions: "2.4k mentions", change: "+340%" },
-                { topic: "Oil Futures", mentions: "1.8k mentions", change: "+128%" },
-                { topic: "Fed Rate Decision", mentions: "3.1k mentions", change: "+89%" },
-                { topic: "Crypto ETF Inflows", mentions: "1.2k mentions", change: "+215%" },
-              ].map((t, i) => (
-                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div>
-                    <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-main)" }}>{t.topic}</div>
-                    <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{t.mentions}</div>
-                  </div>
-                  <span className="section-badge badge-green">{t.change}</span>
-                </div>
-              ))}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "120px", gap: "12px" }}>
+              <TrendingUp size={28} style={{ color: "var(--text-dim)" }} />
+              <span style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>
+                Trending topics will populate from news analysis
+              </span>
             </div>
           </div>
         </div>

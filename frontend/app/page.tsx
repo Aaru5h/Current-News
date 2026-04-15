@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   TrendingUp,
   TrendingDown,
@@ -8,30 +8,39 @@ import {
   Sparkles,
   BarChart3,
   Activity,
+  Loader2,
 } from "lucide-react";
 
-const WATCHLIST = [
-  { ticker: "AAPL", name: "Apple Inc.", price: "$175.10", change: "-0.45%", negative: true },
-  { ticker: "TSLA", name: "Tesla Motors", price: "$171.05", change: "+1.12%", negative: false },
-  { ticker: "MSFT", name: "Microsoft", price: "$415.50", change: "+0.88%", negative: false },
-  { ticker: "AMZN", name: "Amazon", price: "$178.25", change: "+0.34%", negative: false },
-];
-
-const INDICATORS = [
-  { label: "RSI (14)", value: "62.4", status: "Neutral" },
-  { label: "MACD", value: "Bullish", status: "Crossover" },
-  { label: "Bollinger", value: "Upper", status: "Overbought" },
-  { label: "EMA 50/200", value: "Golden", status: "Bullish" },
-];
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export default function DashboardPage() {
+  const [latestNews, setLatestNews] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const newsRes = await fetch(`${API_URL}/api/news/latest`);
+        if (newsRes.ok) {
+          const newsData = await newsRes.json();
+          setLatestNews(newsData.data || []);
+        }
+      } catch (err) {
+        console.error("Error fetching dashboard data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDashboardData();
+  }, []);
+
   return (
     <div>
       {/* Page Header */}
       <div className="page-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div>
-          <h1 className="page-title">NVDA</h1>
-          <p className="page-subtitle">NVIDIA Corporation • NASDAQ</p>
+          <h1 className="page-title">Dashboard</h1>
+          <p className="page-subtitle">Real-time market intelligence overview</p>
         </div>
         <div style={{ display: "flex", gap: "12px" }}>
           <button className="btn btn-ghost">
@@ -43,193 +52,126 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Stats Row */}
-      <div className="stats-row" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
-        <div className="stat-card">
-          <div className="stat-label">Market Cap</div>
-          <div className="stat-value">$2.19T</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">P/E Ratio</div>
-          <div className="stat-value">74.24</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">Vol (Avg)</div>
-          <div className="stat-value">48.2M</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">Dividend</div>
-          <div className="stat-value">0.02%</div>
-        </div>
+      {/* Info Banner */}
+      <div className="card" style={{ marginBottom: "24px", padding: "20px", borderLeft: "3px solid var(--accent-blue)" }}>
+        <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", lineHeight: 1.7 }}>
+          Connect your backend APIs to populate the dashboard with live market data, portfolio stats, and AI signals.
+          Real-time data flows through <strong style={{ color: "var(--text-main)" }}>/api/market</strong>, <strong style={{ color: "var(--text-main)" }}>/api/news</strong>, and <strong style={{ color: "var(--text-main)" }}>/api/ai</strong> endpoints.
+        </p>
       </div>
 
       {/* Main Grid */}
       <div className="grid-main-side">
         {/* Left Column */}
         <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-          {/* Chart Area */}
+          {/* Latest News */}
           <div className="card">
             <div className="section-header">
               <h2 className="section-title">
                 <TrendingUp size={18} className="section-title-icon" />
-                Price Chart
+                Latest News
               </h2>
-              <div style={{ display: "flex", gap: "6px" }}>
-                {["1D", "1W", "1M", "3M", "1Y", "ALL"].map((t) => (
-                  <button
-                    key={t}
-                    className="indicator-pill"
-                    style={t === "1M" ? { background: "rgba(59,130,246,0.15)", color: "var(--accent-blue)", borderColor: "rgba(59,130,246,0.3)" } : {}}
+              <span className="section-badge badge-blue">
+                {latestNews.length} articles
+              </span>
+            </div>
+            {loading ? (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "200px", gap: "10px" }}>
+                <Loader2 size={18} className="spin" style={{ color: "var(--accent-blue)" }} />
+                <span style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>Loading news feed...</span>
+              </div>
+            ) : latestNews.length > 0 ? (
+              <div>
+                {latestNews.slice(0, 6).map((article, i) => (
+                  <a
+                    key={i}
+                    href={article.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="feed-item"
+                    style={{ display: "block", textDecoration: "none" }}
                   >
-                    {t}
-                  </button>
+                    <div className="feed-item-tag" style={{ color: "var(--accent-cyan)" }}>
+                      {article.category || article.source || "News"}
+                    </div>
+                    <div className="feed-item-title">{article.title}</div>
+                    <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", lineHeight: 1.6, marginTop: "6px" }}>
+                      {(article.summary || article.content || "").substring(0, 150)}...
+                    </div>
+                    <div className="feed-item-meta" style={{ marginTop: "8px" }}>
+                      <span>{article.source}</span>
+                      <span style={{ marginLeft: "12px", color: "var(--text-dim)" }}>
+                        {article.publishedAt ? new Date(article.publishedAt).toLocaleDateString() : ""}
+                      </span>
+                    </div>
+                  </a>
                 ))}
               </div>
-            </div>
-            <div className="chart-area">
-              <div className="chart-line">
-                <svg viewBox="0 0 800 250" preserveAspectRatio="none">
-                  <defs>
-                    <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="rgba(59,130,246,0.3)" />
-                      <stop offset="100%" stopColor="rgba(59,130,246,0)" />
-                    </linearGradient>
-                  </defs>
-                  <path
-                    d="M0,200 C50,180 100,190 150,150 C200,110 250,140 300,100 C350,80 400,120 450,70 C500,90 550,50 600,60 C650,40 700,80 750,30 L800,45 L800,250 L0,250 Z"
-                    fill="url(#chartGrad)"
-                  />
-                  <path
-                    d="M0,200 C50,180 100,190 150,150 C200,110 250,140 300,100 C350,80 400,120 450,70 C500,90 550,50 600,60 C650,40 700,80 750,30 L800,45"
-                    fill="none"
-                    stroke="var(--accent-blue)"
-                    strokeWidth="2.5"
-                  />
-                </svg>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "200px", gap: "12px" }}>
+                <TrendingUp size={32} style={{ color: "var(--text-dim)" }} />
+                <span style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>No news articles yet</span>
+                <span style={{ color: "var(--text-dim)", fontSize: "0.78rem" }}>
+                  Trigger a fetch via POST /api/news/fetch
+                </span>
               </div>
-            </div>
+            )}
           </div>
 
-          {/* Technical Indicators */}
-          <div className="card">
-            <div className="section-header">
-              <h2 className="section-title">
-                <BarChart3 size={18} className="section-title-icon" />
-                Technical Indicators
-              </h2>
-            </div>
-            <div className="grid-4">
-              {INDICATORS.map((ind) => (
-                <div key={ind.label} className="indicator-pill" style={{ flexDirection: "column", alignItems: "flex-start", padding: "14px", gap: "4px" }}>
-                  <span style={{ fontSize: "0.7rem", color: "var(--text-dim)" }}>{ind.label}</span>
-                  <span style={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-main)" }}>{ind.value}</span>
-                  <span style={{ fontSize: "0.68rem", color: "var(--accent-green)" }}>{ind.status}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* AI Reasoning */}
+          {/* AI Analysis Placeholder */}
           <div className="card">
             <div className="section-header">
               <h2 className="section-title">
                 <Brain size={18} style={{ color: "var(--accent-purple)" }} />
-                Reasoning & AI Analysis
+                AI Analysis
               </h2>
             </div>
-            <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", lineHeight: 1.7, marginBottom: "20px" }}>
-              Our neural model has processed over <strong style={{ color: "var(--text-main)" }}>14.2M data points</strong> including
-              real-time order books, sentiment from 50+ financial news sources, and historical volatility cycles.
-            </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "20px" }}>
-              {[
-                "Earnings momentum shows a 12% alpha relative to sector peers.",
-                "Institutional inflow increased by 4.5B in the last session.",
-                "Low correlation with macroeconomic drag in current cycle.",
-              ].map((item, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
-                  <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "var(--accent-blue)", marginTop: "7px", flexShrink: 0 }} />
-                  <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", lineHeight: 1.6 }}>{item}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Risk Box */}
-            <div className="risk-box">
-              <div className="risk-box-title">
-                <ShieldAlert size={14} /> Risk Assessment
-              </div>
-              <p className="risk-box-text">
-                &ldquo;The primary risk vector is currently geopolitical supply chain disruption.
-                However, inventory levels suggest a 3-month buffer.&rdquo;
-              </p>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "180px", gap: "12px" }}>
+              <Brain size={32} style={{ color: "var(--text-dim)" }} />
+              <span style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
+                AI analysis will appear here when signals are generated
+              </span>
+              <span style={{ fontSize: "0.78rem", color: "var(--text-dim)" }}>
+                Use POST /api/ai/analyze to trigger analysis
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Right Column - Watchlist */}
+        {/* Right Column */}
         <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+          {/* Market Data */}
           <div className="card">
             <div className="section-header">
               <h2 className="section-title">
                 <Sparkles size={18} style={{ color: "var(--accent-amber)" }} />
-                Watchlist
+                Market Data
               </h2>
-              <span className="section-badge badge-blue">4 Assets</span>
             </div>
-            <div>
-              {WATCHLIST.map((stock) => (
-                <div key={stock.ticker} className="watchlist-item">
-                  <div className="watchlist-item-left">
-                    <div
-                      className="watchlist-ticker-icon"
-                      style={
-                        stock.negative
-                          ? { background: "rgba(239,68,68,0.1)", color: "var(--accent-red)" }
-                          : {}
-                      }
-                    >
-                      {stock.ticker.slice(0, 2)}
-                    </div>
-                    <div>
-                      <div className="watchlist-ticker-name">{stock.ticker}</div>
-                      <div className="watchlist-ticker-company">{stock.name}</div>
-                    </div>
-                  </div>
-                  <div className="watchlist-item-right">
-                    <div className="watchlist-price">{stock.price}</div>
-                    <div className={`watchlist-change ${stock.negative ? "negative" : "positive"}`}>
-                      {stock.negative ? <TrendingDown size={10} /> : <TrendingUp size={10} />}{" "}
-                      {stock.change}
-                    </div>
-                  </div>
-                </div>
-              ))}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "200px", gap: "12px" }}>
+              <BarChart3 size={32} style={{ color: "var(--text-dim)" }} />
+              <span style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
+                No market data loaded
+              </span>
+              <span style={{ fontSize: "0.78rem", color: "var(--text-dim)" }}>
+                Refresh via POST /api/market/data/refresh
+              </span>
             </div>
           </div>
 
-          {/* Quick Stats */}
+          {/* Risk Assessment */}
           <div className="card">
             <div className="section-header">
-              <h2 className="section-title">Market Summary</h2>
+              <h2 className="section-title">
+                <ShieldAlert size={18} style={{ color: "var(--accent-amber)" }} />
+                Risk Assessment
+              </h2>
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-              {[
-                { label: "S&P 500", value: "5,234.18", change: "+0.52%", up: true },
-                { label: "NASDAQ", value: "16,428.82", change: "+0.87%", up: true },
-                { label: "DOW", value: "39,512.40", change: "-0.12%", up: false },
-                { label: "VIX", value: "14.32", change: "-2.1%", up: false },
-              ].map((m) => (
-                <div key={m.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>{m.label}</span>
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-main)", fontVariantNumeric: "tabular-nums" }}>{m.value}</span>
-                    <span style={{ fontSize: "0.72rem", fontWeight: 600, color: m.up ? "var(--accent-green)" : "var(--accent-red)", fontVariantNumeric: "tabular-nums" }}>
-                      {m.change}
-                    </span>
-                  </div>
-                </div>
-              ))}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "120px", gap: "12px" }}>
+              <ShieldAlert size={28} style={{ color: "var(--text-dim)" }} />
+              <span style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>
+                Risk analysis available after AI signals are generated
+              </span>
             </div>
           </div>
         </div>
